@@ -1,8 +1,6 @@
 Plyr is a simple, lightweight, accessible and customizable HTML5, YouTube and Vimeo media player that supports [_modern_](#browser-support) browsers.
 
-[Checkout the demo](https://plyr.io) - [Donate](#donate) - [Slack](https://bit.ly/plyr--chat)
-
-[![npm version](https://badge.fury.io/js/plyr.svg)](https://badge.fury.io/js/plyr) [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/sampotts/plyr) [![Financial Contributors on Open Collective](https://opencollective.com/plyr/all/badge.svg?label=financial+contributors)](https://opencollective.com/plyr)
+<a href="https://www.buymeacoffee.com/leduong" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
 
 [![Image of Plyr](https://cdn.plyr.io/static/demo/screenshot.png?v=3)](https://plyr.io)
 
@@ -31,7 +29,7 @@ Plyr is a simple, lightweight, accessible and customizable HTML5, YouTube and Vi
 
 ### Demos
 
-You can try Plyr in Codepen using our minimal templates: [HTML5 video](https://codepen.io/pen?template=bKeqpr), [HTML5 audio](https://codepen.io/pen?template=rKLywR), [YouTube](https://codepen.io/pen?template=GGqbbJ), [Vimeo](https://codepen.io/pen?template=bKeXNq). For Streaming we also have example integrations with: [Dash.js](https://codepen.io/pen?template=zaBgBy), [Hls.js](https://codepen.io/pen?template=oyLKQb) and [Shaka Player](https://codepen.io/pen?template=ZRpzZO)
+You can try Plyr in Codepen using our minimal templates: [HTML5 video](https://codepen.io/pen?template=bKeqpr), [HTML5 audio](https://codepen.io/pen?template=rKLywR), [YouTube](https://codepen.io/pen?template=GGqbbJ), [Vimeo](https://codepen.io/pen?template=bKeXNq). For Streaming we also have example integrations with: [Dash.js](https://playcode.io/660000), [Hls.js](https://playcode.io/659995) and [Shaka Player](https://codepen.io/pen?template=ZRpzZO)
 
 # Quick setup
 
@@ -63,6 +61,27 @@ Plyr extends upon the standard [HTML5 media element](https://developer.mozilla.o
 ```
 
 For YouTube and Vimeo players, Plyr uses progressive enhancement to enhance the default `<iframe>` embeds. Below are some examples. The `plyr__video-embed` classname will make the embed responsive. You can add the `autoplay`, `loop`, `hl` (YouTube only) and `playsinline` (YouTube only) query parameters to the URL and they will be set as config options automatically. For YouTube, the `origin` should be updated to reflect the domain you're hosting the embed on, or you can opt to omit it.
+
+### DASHjs or HLSjs
+```html
+<video id="player" autoplay crossorigin playsinline muted></video>
+
+<script>
+  const videoSrc = 'https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd';
+  window.PlyrPlayer = new Plyr('#player', { src: videoSrc });
+</script>
+```
+
+```html
+<video id="player" autoplay crossorigin playsinline muted></video>
+
+<script>
+  const videoSrc =
+    'https://multiplatform-f.akamaihd.net/i/multi/april11/hdworld/hdworld_,512x288_450_b,640x360_700_b,768x432_1000_b,1024x576_1400_m,.mp4.csmil/master.m3u8';
+  window.PlyrPlayer = new Plyr('#player', { src: videoSrc });
+</script>
+```
+
 
 ### YouTube
 
