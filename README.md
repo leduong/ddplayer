@@ -179,7 +179,7 @@ If you want to use our CDN (provided by [Fastly](https://www.fastly.com/)) for t
 ## SVG Sprite
 
 The SVG sprite is loaded automatically from our CDN (provided by [Fastly](https://www.fastly.com/)). To change this, see the [options](#options) below. For
-reference, the CDN hosted SVG sprite can be found at `https://cdn.plyr.io/3.6.1/plyr.svg`.
+reference, the CDN hosted SVG sprite can be found at `https://cdn.plyr.io/3.6.2/plyr.svg`.
 
 # Ads
 
@@ -287,7 +287,7 @@ You can set them in your CSS for all players:
 ```html
 <video class="player" style="--plyr-color-main: #1ac266;">
     ...
-</vieo>
+</video>
 ```
 
 ### SASS
@@ -852,6 +852,9 @@ Plyr costs money to run, not only my time. I donate my time for free as I enjoy 
 - [Oscar Radio](http://oscar-radio.xyz/)
 - [Sparkk TV](https://www.sparkktv.com/)
 - [@halfhalftravel](https://www.halfhalftravel.com/)
+- [BitChute](https://www.bitchute.com)
+- [Rutheneum-Bote](https://gymnasium-rutheneum.de/content/newspaper/kreativwettbewerb.php)
+- [pressakey.com | Blog-Magazin für Videospiele](https://pressakey.com)
 
 If you want to be added to the list, open a pull request. It'd be awesome to see how you're using Plyr 😎
 

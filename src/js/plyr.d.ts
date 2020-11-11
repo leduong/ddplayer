@@ -357,7 +357,7 @@ declare namespace Plyr {
     /**
      * Specify a URL or path to a blank video file used to properly cancel network requests.
      */
-    blankUrl?: string;
+    blankVideo?: string;
 
     /**
      * Autoplay the media on load. This is generally advised against on UX grounds. It is also disabled by default in some browsers.
@@ -534,7 +534,7 @@ declare namespace Plyr {
 
   interface FullScreenOptions {
     enabled?: boolean;
-    fallback?: boolean;
+    fallback?: boolean | 'force';
     allowAudio?: boolean;
     iosNative?: boolean;
   }

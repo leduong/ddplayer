@@ -61,7 +61,7 @@ const defaults = {
   // Sprite (for icons)
   loadSprite: true,
   iconPrefix: 'plyr',
-  iconUrl: 'https://cdn.plyr.io/3.6.1/plyr.svg',
+  iconUrl: 'https://cdn.plyr.io/3.6.2/plyr.svg',
 
   // Blank video (used to prevent errors on source change)
   blankVideo: 'https://cdn.plyr.io/static/blank.mp4',
@@ -213,7 +213,7 @@ const defaults = {
     vimeo: {
       sdk: 'https://player.vimeo.com/api/player.js',
       iframe: 'https://player.vimeo.com/video/{0}?{1}',
-      api: 'https://vimeo.com/api/v2/video/{0}.json',
+      api: 'https://vimeo.com/api/oembed.json?url={0}',
     },
     youtube: {
       sdk: 'https://www.youtube.com/iframe_api',
