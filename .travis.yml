@@ -1,4 +1,3 @@
-sudo: false
 language: node_js
 node_js:
   - '10'
@@ -16,7 +15,6 @@ jobs:
     script: npm run build
     deploy:
       provider: npm
-      skip_cleanup: true
       on:
         branch: release/*
       email: me@leduong.com
