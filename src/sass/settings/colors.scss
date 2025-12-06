@@ -1,8 +1,10 @@
+@use "lib/css-vars";
+
 // ==========================================================================
 // Colors
 // ==========================================================================
 
-$plyr-color-main: var(--plyr-color-main, #2ed573) !default;
+$plyr-color-main: css-vars.var(--plyr-color-main, #2ed573) !default;
 
 // Grayscale
 $plyr-color-gray-900: hsl(216, 15%, 16%) !default;

@@ -13,7 +13,7 @@ const babel = require('rollup-plugin-babel');
 const commonjs = require('rollup-plugin-commonjs');
 const resolve = require('rollup-plugin-node-resolve');
 // CSS
-const sass = require('gulp-sass');
+const sass = require('gulp-sass')(require('sass'));
 const postcss = require('gulp-postcss');
 const autoprefixer = require('autoprefixer');
 const clean = require('postcss-clean');
@@ -75,8 +75,8 @@ const tasks = {
 const sizeOptions = { showFiles: true, gzip: true };
 
 // Clean out /dist
-gulp.task('clean', (done) => {
-  const dirs = [paths.plyr.output, paths.demo.output].map((dir) => path.join(dir, '**/*'));
+gulp.task('clean', done => {
+  const dirs = [paths.plyr.output, paths.demo.output].map(dir => path.join(dir, '**/*'));
 
   // Don't delete the mp4
   dirs.push(`!${path.join(paths.plyr.output, '**/*.mp4')}`);
@@ -101,7 +101,7 @@ Object.entries(build.static).forEach(([filename, entry]) => {
 Object.entries(build.js).forEach(([filename, entry]) => {
   const { dist, formats, namespace, polyfill, src } = entry;
 
-  formats.forEach((format) => {
+  formats.forEach(format => {
     const name = `js:${filename}:${format}`;
     const extension = format === 'es' ? 'mjs' : 'js';
     tasks.js.push(name);

@@ -204,10 +204,10 @@ const defaults = {
   // URLs
   urls: {
     hlsjs: {
-      sdk: 'https://cdn.jsdelivr.net/npm/hls.js@0.14.10/dist/hls.min.js',
+      sdk: 'https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.min.js',
     },
     dashjs: {
-      sdk: 'https://cdn.jsdelivr.net/npm/dashjs@3.1.2/dist/dash.all.min.js',
+      sdk: 'https://cdn.jsdelivr.net/npm/dashjs@5.1.0/dist/legacy/umd/dash.all.min.js',
     },
     download: null,
     vimeo: {

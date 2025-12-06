@@ -1,3 +1,8 @@
+@use "components/progress";
+@use "settings/controls";
+@use "settings/sliders";
+@use "settings/type";
+
 
 .plyr__progress__buffer {
     -webkit-appearance: none; /* stylelint-disable-line */
@@ -6,7 +11,7 @@
     border-radius: 100px;
     height: 3px;
     left: 0;
-    margin-top: calc((#{$plyr-range-track-height} / 2) * -1);
+    margin-top: calc((#{sliders.$plyr-range-track-height} / 2) * -1);
     padding: 0;
     position: absolute;
     top: 50%;
@@ -18,7 +23,7 @@
     &::-webkit-progress-value {
       background: currentColor;
       border-radius: 100px;
-      min-width: $plyr-range-track-height;
+      min-width: sliders.$plyr-range-track-height;
       transition: width 0.2s ease;
     }
   
@@ -26,7 +31,7 @@
     &::-moz-progress-bar {
       background: currentColor;
       border-radius: 100px;
-      min-width: $plyr-range-track-height;
+      min-width: sliders.$plyr-range-track-height;
       transition: width 0.2s ease;
     }
   
@@ -39,16 +44,16 @@
 
 .plyr__progress {
     position: absolute;
-    left:  calc(#{$plyr-control-spacing} * 2);
-    margin-right: calc(#{$plyr-control-spacing} * 2);
-    bottom: calc(#{$plyr-control-spacing} * 4);
-    width: calc(100% - #{$plyr-control-spacing} * 4);
+    left:  calc(#{controls.$plyr-control-spacing} * 2);
+    margin-right: calc(#{controls.$plyr-control-spacing} * 2);
+    bottom: calc(#{controls.$plyr-control-spacing} * 4);
+    width: calc(100% - #{controls.$plyr-control-spacing} * 4);
   
     input[type='range'],
     &__buffer {
-      margin-left: calc(#{$plyr-progress-offset} * -0.5);
-      margin-right: calc(#{$plyr-progress-offset} * -0.5);
-      width: calc(100% + #{$plyr-progress-offset});
+      margin-left: calc(#{progress.$plyr-progress-offset} * -0.5);
+      margin-right: calc(#{progress.$plyr-progress-offset} * -0.5);
+      width: calc(100% + #{progress.$plyr-progress-offset});
     }
   
     input[type='range'] {
@@ -58,7 +63,7 @@
   
     // Seek tooltip to show time
     .plyr__tooltip {
-      font-size: $plyr-font-size-time;
+      font-size: type.$plyr-font-size-time;
       left: 0;
     }
   }

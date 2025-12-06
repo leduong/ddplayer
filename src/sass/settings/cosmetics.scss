@@ -1,5 +1,8 @@
+@use "lib/css-vars";
+@use "settings/colors";
+
 // ==========================================================================
 // Cosmetic
 // ==========================================================================
 
-$plyr-tab-focus-color: var(--plyr-tab-focus-color, var(--plyr-color-main, $plyr-color-main)) !default;
+$plyr-tab-focus-color: css-vars.var(--plyr-tab-focus-color, css-vars.var(--plyr-color-main, colors.$plyr-color-main)) !default;
