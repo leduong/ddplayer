@@ -3,7 +3,6 @@
 // ==========================================================================
 
 import { transitionEndEvent } from './utils/animation';
-import browser from './utils/browser';
 import { createElement } from './utils/elements';
 import is from './utils/is';
 
@@ -24,10 +23,9 @@ const support = {
 
   // Check for support
   // Basic functionality vs full UI
-  check(type, provider, playsinline) {
-    const canPlayInline = browser.isIPhone && playsinline && support.playsinline;
+  check(type, provider) {
     const api = support[type] || provider !== 'html5';
-    const ui = api && support.rangeInput && (type !== 'video' || !browser.isIPhone || canPlayInline);
+    const ui = api && support.rangeInput;
 
     return {
       api,
@@ -36,25 +34,8 @@ const support = {
   },
 
   // Picture-in-picture support
-  // Safari & Chrome only currently
   pip: (() => {
-    if (browser.isIPhone) {
-      return false;
-    }
-
-    // Safari
-    // https://developer.apple.com/documentation/webkitjs/adding_picture_in_picture_to_your_safari_media_controls
-    if (is.function(createElement('video').webkitSetPresentationMode)) {
-      return true;
-    }
-
-    // Chrome
-    // https://developers.google.com/web/updates/2018/10/watch-video-using-picture-in-picture
-    if (document.pictureInPictureEnabled && !createElement('video').disablePictureInPicture) {
-      return true;
-    }
-
-    return false;
+    return (document.pictureInPictureEnabled && !createElement('video').disablePictureInPicture);
   })(),
 
   // Airplay support
@@ -88,7 +69,8 @@ const support = {
 
     try {
       return Boolean(type && this.media.canPlayType(type).replace(/no/, ''));
-    } catch (e) {
+    }
+    catch {
       return false;
     }
   },

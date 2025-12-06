@@ -19,9 +19,8 @@ const supportsPassiveListeners = (() => {
     });
     window.addEventListener('test', null, options);
     window.removeEventListener('test', null, options);
-  } catch (e) {
-    // Do nothing
   }
+  catch {}
 
   return supported;
 })();
@@ -50,7 +49,7 @@ export function toggleListener(element, event, callback, toggle = false, passive
   }
 
   // If a single node is passed, bind the event listener
-  events.forEach(type => {
+  events.forEach((type) => {
     if (this && this.eventListeners && toggle) {
       // Cache event listener
       this.eventListeners.push({ element, type, callback, options });
@@ -100,7 +99,7 @@ export function triggerEvent(element, type = '', bubbles = false, detail = {}) {
 // Unbind all cached event listeners
 export function unbindListeners() {
   if (this && this.eventListeners) {
-    this.eventListeners.forEach(item => {
+    this.eventListeners.forEach((item) => {
       const { element, type, callback, options } = item;
       element.removeEventListener(type, callback, options);
     });

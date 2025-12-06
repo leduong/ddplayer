@@ -5,7 +5,6 @@
 import captions from './captions';
 import controls from './controls';
 import support from './support';
-import browser from './utils/browser';
 import { getElement, toggleClass } from './utils/elements';
 import { ready, triggerEvent } from './utils/events';
 import i18n from './utils/i18n';
@@ -22,7 +21,8 @@ const ui = {
   toggleNativeControls(toggle = false) {
     if (toggle && this.isHTML5) {
       this.media.setAttribute('controls', '');
-    } else {
+    }
+    else {
       this.media.removeAttribute('controls');
     }
   },
@@ -82,6 +82,9 @@ const ui = {
     // Reset time display
     controls.timeUpdate.call(this);
 
+    // Reset duration display
+    controls.durationUpdate.call(this);
+
     // Update the UI
     ui.checkPlaying.call(this);
 
@@ -94,9 +97,6 @@ const ui = {
 
     // Check for airplay support
     toggleClass(this.elements.container, this.config.classNames.airplay.supported, support.airplay && this.isHTML5);
-
-    // Add iOS class
-    toggleClass(this.elements.container, this.config.classNames.isIos, browser.isIos);
 
     // Add touch class
     toggleClass(this.elements.container, this.config.classNames.isTouch, this.touch);
@@ -122,6 +122,11 @@ const ui = {
     if (this.config.duration) {
       controls.durationUpdate.call(this);
     }
+
+    // Media metadata
+    if (this.config.mediaMetadata) {
+      controls.setMediaMetadata.call(this);
+    }
   },
 
   // Setup aria attribute for play and iframe title
@@ -135,7 +140,7 @@ const ui = {
     }
 
     // If there's a play button, set label
-    Array.from(this.elements.buttons.play || []).forEach(button => {
+    Array.from(this.elements.buttons.play || []).forEach((button) => {
       button.setAttribute('aria-label', label);
     });
 
@@ -172,19 +177,22 @@ const ui = {
     // Set property synchronously to respect the call order
     this.media.setAttribute('data-poster', poster);
 
+    // Show the poster
+    this.elements.poster.removeAttribute('hidden');
+
     // Wait until ui is ready
     return (
       ready
         .call(this)
         // Load image
         .then(() => loadImage(poster))
-        .catch(err => {
+        .catch((error) => {
           // Hide poster on error unless it's been set by another call
           if (poster === this.poster) {
             ui.togglePoster.call(this, false);
           }
           // Rethrow
-          throw err;
+          throw error;
         })
         .then(() => {
           // Prevent race conditions
@@ -214,7 +222,7 @@ const ui = {
     toggleClass(this.elements.container, this.config.classNames.stopped, this.stopped);
 
     // Set state
-    Array.from(this.elements.buttons.play || []).forEach(target => {
+    Array.from(this.elements.buttons.play || []).forEach((target) => {
       Object.assign(target, { pressed: this.playing });
       target.setAttribute('aria-label', i18n.get(this.playing ? 'pause' : 'play', this.config));
     });
@@ -270,8 +278,8 @@ const ui = {
     // Loop through values (as they are the keys when the object is spread 🤔)
     Object.values({ ...this.media.style })
       // We're only fussed about Plyr specific properties
-      .filter(key => !is.empty(key) && key.startsWith('--plyr'))
-      .forEach(key => {
+      .filter(key => !is.empty(key) && is.string(key) && key.startsWith('--plyr'))
+      .forEach((key) => {
         // Set on the container
         this.elements.container.style.setProperty(key, this.media.style.getPropertyValue(key));
 

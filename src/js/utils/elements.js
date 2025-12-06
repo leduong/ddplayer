@@ -29,7 +29,8 @@ export function wrap(elements, wrapper) {
       // append it to the parent.
       if (sibling) {
         parent.insertBefore(child, sibling);
-      } else {
+      }
+      else {
         parent.appendChild(child);
       }
     });
@@ -37,9 +38,7 @@ export function wrap(elements, wrapper) {
 
 // Set attributes
 export function setAttributes(element, attributes) {
-  if (!is.element(element) || is.empty(attributes)) {
-    return;
-  }
+  if (!is.element(element) || is.empty(attributes)) return;
 
   // Assume null and undefined attributes should be left out,
   // Setting them would otherwise convert them to "null" and "undefined"
@@ -60,27 +59,23 @@ export function createElement(type, attributes, text) {
 
   // Add text node
   if (is.string(text)) {
-    element.innerText = text;
+    element.textContent = text;
   }
 
   // Return built element
   return element;
 }
 
-// Inaert an element after another
+// Insert an element after another
 export function insertAfter(element, target) {
-  if (!is.element(element) || !is.element(target)) {
-    return;
-  }
+  if (!is.element(element) || !is.element(target)) return;
 
   target.parentNode.insertBefore(element, target.nextSibling);
 }
 
 // Insert a DocumentFragment
 export function insertElement(type, parent, attributes, text) {
-  if (!is.element(parent)) {
-    return;
-  }
+  if (!is.element(parent)) return;
 
   parent.appendChild(createElement(type, attributes, text));
 }
@@ -101,9 +96,7 @@ export function removeElement(element) {
 
 // Remove all child elements
 export function emptyElement(element) {
-  if (!is.element(element)) {
-    return;
-  }
+  if (!is.element(element)) return;
 
   let { length } = element.childNodes;
 
@@ -115,9 +108,7 @@ export function emptyElement(element) {
 
 // Replace element
 export function replaceElement(newChild, oldChild) {
-  if (!is.element(oldChild) || !is.element(oldChild.parentNode) || !is.element(newChild)) {
-    return null;
-  }
+  if (!is.element(oldChild) || !is.element(oldChild.parentNode) || !is.element(newChild)) return null;
 
   oldChild.parentNode.replaceChild(newChild, oldChild);
 
@@ -131,14 +122,12 @@ export function getAttributesFromSelector(sel, existingAttributes) {
   // '#test' to { id: 'test' }
   // '[data-test="test"]' to { 'data-test': 'test' }
 
-  if (!is.string(sel) || is.empty(sel)) {
-    return {};
-  }
+  if (!is.string(sel) || is.empty(sel)) return {};
 
   const attributes = {};
   const existing = extend({}, existingAttributes);
 
-  sel.split(',').forEach(s => {
+  sel.split(',').forEach((s) => {
     // Remove whitespace
     const selector = s.trim();
     const className = selector.replace('.', '');
@@ -155,7 +144,8 @@ export function getAttributesFromSelector(sel, existingAttributes) {
         // Add to existing classname
         if (is.string(existing.class)) {
           attributes.class = `${existing.class} ${className}`;
-        } else {
+        }
+        else {
           attributes.class = className;
         }
         break;
@@ -181,9 +171,7 @@ export function getAttributesFromSelector(sel, existingAttributes) {
 
 // Toggle hidden
 export function toggleHidden(element, hidden) {
-  if (!is.element(element)) {
-    return;
-  }
+  if (!is.element(element)) return;
 
   let hide = hidden;
 
@@ -191,7 +179,6 @@ export function toggleHidden(element, hidden) {
     hide = !element.hidden;
   }
 
-  // eslint-disable-next-line no-param-reassign
   element.hidden = hide;
 }
 
@@ -227,12 +214,12 @@ export function matches(element, selector) {
     return Array.from(document.querySelectorAll(selector)).includes(this);
   }
 
-  const method =
-    prototype.matches ||
-    prototype.webkitMatchesSelector ||
-    prototype.mozMatchesSelector ||
-    prototype.msMatchesSelector ||
-    match;
+  const method
+    = prototype.matches
+      || prototype.webkitMatchesSelector
+      || prototype.mozMatchesSelector
+      || prototype.msMatchesSelector
+      || match;
 
   return method.call(element, selector);
 }
@@ -268,16 +255,9 @@ export function getElement(selector) {
 }
 
 // Set focus and tab focus class
-export function setFocus(element = null, tabFocus = false) {
-  if (!is.element(element)) {
-    return;
-  }
+export function setFocus(element = null, focusVisible = false) {
+  if (!is.element(element)) return;
 
   // Set regular focus
-  element.focus({ preventScroll: true });
-
-  // If we want to mimic keyboard focus via tab
-  if (tabFocus) {
-    toggleClass(element, this.config.classNames.tabFocus);
-  }
+  element.focus({ preventScroll: true, focusVisible });
 }

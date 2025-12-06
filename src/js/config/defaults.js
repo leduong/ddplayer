@@ -18,8 +18,7 @@ const defaults = {
   // Only allow one media playing at once (vimeo only)
   autopause: true,
 
-  // Allow inline playback on iOS (this effects YouTube/Vimeo - HTML5 requires the attribute present)
-  // TODO: Remove iosNative fullscreen option in favour of this (logic needs work)
+  // Allow inline playback on iOS
   playsinline: true,
 
   // Default time to skip when rewind/fast forward
@@ -61,7 +60,7 @@ const defaults = {
   // Sprite (for icons)
   loadSprite: true,
   iconPrefix: 'plyr',
-  iconUrl: 'https://cdn.plyr.io/3.6.2/plyr.svg',
+  iconUrl: 'https://cdn.plyr.io/3.8.3/plyr.svg',
 
   // Blank video (used to prevent errors on source change)
   blankVideo: 'https://cdn.plyr.io/static/blank.mp4',
@@ -363,9 +362,9 @@ const defaults = {
     hover: 'plyr--hover',
     tooltip: 'plyr__tooltip',
     cues: 'plyr__cues',
+    marker: 'plyr__progress__marker',
     hidden: 'plyr__sr-only',
     hideControls: 'plyr--hide-controls',
-    isIos: 'plyr--is-ios',
     isTouch: 'plyr--is-touch',
     uiSupported: 'plyr--full-ui',
     noTransition: 'plyr--no-transition',
@@ -393,7 +392,6 @@ const defaults = {
       supported: 'plyr--airplay-supported',
       active: 'plyr--airplay-active',
     },
-    tabFocus: 'plyr__tab-focus',
     previewThumbnails: {
       // Tooltip thumbs
       thumbContainer: 'plyr__preview-thumb',
@@ -411,6 +409,7 @@ const defaults = {
     embed: {
       provider: 'data-plyr-provider',
       id: 'data-plyr-embed-id',
+      hash: 'data-plyr-embed-hash',
     },
   },
 
@@ -426,6 +425,7 @@ const defaults = {
   previewThumbnails: {
     enabled: false,
     src: '',
+    withCredentials: false,
   },
 
   // Vimeo plugin
@@ -435,20 +435,37 @@ const defaults = {
     title: false,
     speed: true,
     transparent: false,
+    // Custom settings from Plyr
+    customControls: true,
+    referrerPolicy: null, // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/referrerPolicy
     // Whether the owner of the video has a Pro or Business account
     // (which allows us to properly hide controls without CSS hacks, etc)
     premium: false,
-    // Custom settings from Plyr
-    referrerPolicy: null, // https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/referrerPolicy
   },
 
   // YouTube plugin
   youtube: {
-    noCookie: true, // Whether to use an alternative version of YouTube without cookies
     rel: 0, // No related vids
     showinfo: 0, // Hide info
     iv_load_policy: 3, // Hide annotations
     modestbranding: 1, // Hide logos as much as possible (they still show one in the corner when paused)
+    // Custom settings from Plyr
+    customControls: true,
+    noCookie: false, // Whether to use an alternative version of YouTube without cookies
+  },
+
+  // Media Metadata
+  mediaMetadata: {
+    title: '',
+    artist: '',
+    album: '',
+    artwork: [],
+  },
+
+  // Markers
+  markers: {
+    enabled: false,
+    points: [],
   },
 };
 

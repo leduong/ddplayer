@@ -2,37 +2,39 @@ import { createElement } from '../utils/elements';
 import { once } from '../utils/events';
 import fetch from '../utils/fetch';
 import is from '../utils/is';
+import { clamp } from '../utils/numbers';
 import { formatTime } from '../utils/time';
 
 // Arg: vttDataString example: "WEBVTT\n\n1\n00:00:05.000 --> 00:00:10.000\n1080p-00001.jpg"
-const parseVtt = vttDataString => {
+function parseVtt(vttDataString) {
   const processedList = [];
   const frames = vttDataString.split(/\r\n\r\n|\n\n|\r\r/);
 
-  frames.forEach(frame => {
+  frames.forEach((frame) => {
     const result = {};
     const lines = frame.split(/\r\n|\n|\r/);
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (!is.number(result.startTime)) {
         // The line with start and end times on it is the first line of interest
         const matchTimes = line.match(
-          /([0-9]{2})?:?([0-9]{2}):([0-9]{2}).([0-9]{2,3})( ?--> ?)([0-9]{2})?:?([0-9]{2}):([0-9]{2}).([0-9]{2,3})/,
+          /(\d{2})?:?(\d{2}):(\d{2}).(\d{2,3})( ?--> ?)(\d{2})?:?(\d{2}):(\d{2}).(\d{2,3})/,
         ); // Note that this currently ignores caption formatting directives that are optionally on the end of this line - fine for non-captions VTT
 
         if (matchTimes) {
-          result.startTime =
-            Number(matchTimes[1] || 0) * 60 * 60 +
-            Number(matchTimes[2]) * 60 +
-            Number(matchTimes[3]) +
-            Number(`0.${matchTimes[4]}`);
-          result.endTime =
-            Number(matchTimes[6] || 0) * 60 * 60 +
-            Number(matchTimes[7]) * 60 +
-            Number(matchTimes[8]) +
-            Number(`0.${matchTimes[9]}`);
+          result.startTime
+            = Number(matchTimes[1] || 0) * 60 * 60
+              + Number(matchTimes[2]) * 60
+              + Number(matchTimes[3])
+              + Number(`0.${matchTimes[4]}`);
+          result.endTime
+            = Number(matchTimes[6] || 0) * 60 * 60
+              + Number(matchTimes[7]) * 60
+              + Number(matchTimes[8])
+              + Number(`0.${matchTimes[9]}`);
         }
-      } else if (!is.empty(line.trim()) && is.empty(result.text)) {
+      }
+      else if (!is.empty(line.trim()) && is.empty(result.text)) {
         // If we already have the startTime, then we're definitely up to the text line(s)
         const lineSplit = line.trim().split('#xywh=');
         [result.text] = lineSplit;
@@ -50,7 +52,7 @@ const parseVtt = vttDataString => {
   });
 
   return processedList;
-};
+}
 
 /**
  * Preview thumbnails for seek hover and scrubbing
@@ -63,19 +65,20 @@ const parseVtt = vttDataString => {
  * - This implementation uses multiple separate img elements. Other implementations use background-image on one element. This would be nice and simple, but Firefox and Safari have flickering issues with replacing backgrounds of larger images. It seems that YouTube perhaps only avoids this because they don't have the option for high-res previews (even the fullscreen ones, when mousedown/seeking). Images appear over the top of each other, and previous ones are discarded once the new ones have been rendered
  */
 
-const fitRatio = (ratio, outer) => {
+function fitRatio(ratio, outer) {
   const targetRatio = outer.width / outer.height;
   const result = {};
   if (ratio > targetRatio) {
     result.width = outer.width;
     result.height = (1 / ratio) * outer.width;
-  } else {
+  }
+  else {
     result.height = outer.height;
     result.width = ratio * outer.height;
   }
 
   return result;
-};
+}
 
 class PreviewThumbnails {
   /**
@@ -103,15 +106,13 @@ class PreviewThumbnails {
     return this.player.isHTML5 && this.player.isVideo && this.player.config.previewThumbnails.enabled;
   }
 
-  load() {
+  load = () => {
     // Toggle the regular seek tooltip
     if (this.player.elements.display.seekTooltip) {
       this.player.elements.display.seekTooltip.hidden = this.enabled;
     }
 
-    if (!this.enabled) {
-      return;
-    }
+    if (!this.enabled) return;
 
     this.getThumbnails().then(() => {
       if (!this.enabled) {
@@ -124,13 +125,16 @@ class PreviewThumbnails {
       // Check to see if thumb container size was specified manually in CSS
       this.determineContainerAutoSizing();
 
+      // Set up listeners
+      this.listeners();
+
       this.loaded = true;
     });
-  }
+  };
 
   // Download VTT files and parse them
-  getThumbnails() {
-    return new Promise(resolve => {
+  getThumbnails = () => {
+    return new Promise((resolve) => {
       const { src } = this.player.config.previewThumbnails;
 
       if (is.empty(src)) {
@@ -149,7 +153,7 @@ class PreviewThumbnails {
 
       // Via callback()
       if (is.function(src)) {
-        src(thumbnails => {
+        src((thumbnails) => {
           this.thumbnails = thumbnails;
           sortAndResolve();
         });
@@ -164,12 +168,12 @@ class PreviewThumbnails {
         Promise.all(promises).then(sortAndResolve);
       }
     });
-  }
+  };
 
   // Process individual VTT file
-  getThumbnail(url) {
-    return new Promise(resolve => {
-      fetch(url).then(response => {
+  getThumbnail = (url) => {
+    return new Promise((resolve) => {
+      fetch(url, undefined, this.player.config.previewThumbnails.withCredentials).then((response) => {
         const thumbnail = {
           frames: parseVtt(response),
           height: null,
@@ -180,9 +184,9 @@ class PreviewThumbnails {
         // If the URLs do start with '/', then they obviously don't need a prefix, so it will remain blank
         // If the thumbnail URLs start with with none of '/', 'http://' or 'https://', then we need to set their relative path to be the location of the VTT file
         if (
-          !thumbnail.frames[0].text.startsWith('/') &&
-          !thumbnail.frames[0].text.startsWith('http://') &&
-          !thumbnail.frames[0].text.startsWith('https://')
+          !thumbnail.frames[0].text.startsWith('/')
+          && !thumbnail.frames[0].text.startsWith('http://')
+          && !thumbnail.frames[0].text.startsWith('https://')
         ) {
           thumbnail.urlPrefix = url.substring(0, url.lastIndexOf('/') + 1);
         }
@@ -202,26 +206,21 @@ class PreviewThumbnails {
         tempImage.src = thumbnail.urlPrefix + thumbnail.frames[0].text;
       });
     });
-  }
+  };
 
-  startMove(event) {
-    if (!this.loaded) {
-      return;
-    }
+  startMove = (event) => {
+    if (!this.loaded) return;
 
-    if (!is.event(event) || !['touchmove', 'mousemove'].includes(event.type)) {
-      return;
-    }
+    if (!is.event(event) || !['touchmove', 'mousemove'].includes(event.type)) return;
 
     // Wait until media has a duration
-    if (!this.player.media.duration) {
-      return;
-    }
+    if (!this.player.media.duration) return;
 
     if (event.type === 'touchmove') {
       // Calculate seek hover position as approx video seconds
       this.seekTime = this.player.media.duration * (this.player.elements.inputs.seek.value / 100);
-    } else {
+    }
+    else {
       // Calculate seek hover position as approx video seconds
       const clientRect = this.player.elements.progress.getBoundingClientRect();
       const percentage = (100 / clientRect.width) * (event.pageX - clientRect.left);
@@ -240,18 +239,27 @@ class PreviewThumbnails {
       this.mousePosX = event.pageX;
 
       // Set time text inside image container
-      this.elements.thumb.time.innerText = formatTime(this.seekTime);
+      this.elements.thumb.time.textContent = formatTime(this.seekTime);
+
+      // Get marker point for time
+      const point = this.player.config.markers?.points?.find(({ time: t }) => t === Math.round(this.seekTime));
+
+      // Append the point label to the tooltip
+      if (point) {
+        // this.elements.thumb.time.innerText.concat('\n');
+        this.elements.thumb.time.insertAdjacentHTML('afterbegin', `${point.label}<br>`);
+      }
     }
 
     // Download and show image
     this.showImageAtCurrentTime();
-  }
+  };
 
-  endMove() {
+  endMove = () => {
     this.toggleThumbContainer(false, true);
-  }
+  };
 
-  startScrubbing(event) {
+  startScrubbing = (event) => {
     // Only act on left mouse button (0), or touch device (event.button does not exist or is false)
     if (is.nullOrUndefined(event.button) || event.button === false || event.button === 0) {
       this.mouseDown = true;
@@ -265,16 +273,17 @@ class PreviewThumbnails {
         this.showImageAtCurrentTime();
       }
     }
-  }
+  };
 
-  endScrubbing() {
+  endScrubbing = () => {
     this.mouseDown = false;
 
     // Hide scrubbing preview. But wait until the video has successfully seeked before hiding the scrubbing preview
     if (Math.ceil(this.lastTime) === Math.ceil(this.player.media.currentTime)) {
       // The video was already seeked/loaded at the chosen time - hide immediately
       this.toggleScrubbingContainer(false);
-    } else {
+    }
+    else {
       // The video hasn't seeked yet. Wait for that
       once.call(this.player, this.player.media, 'timeupdate', () => {
         // Re-check mousedown - we might have already started scrubbing again
@@ -283,12 +292,12 @@ class PreviewThumbnails {
         }
       });
     }
-  }
+  };
 
   /**
    * Setup hooks for Plyr and window events
    */
-  listeners() {
+  listeners = () => {
     // Hide thumbnail preview - on mouse click, mouse leave (in listeners.js for now), and video play/seek. All four are required, e.g., for buffering
     this.player.on('play', () => {
       this.toggleThumbContainer(false, true);
@@ -301,12 +310,12 @@ class PreviewThumbnails {
     this.player.on('timeupdate', () => {
       this.lastTime = this.player.media.currentTime;
     });
-  }
+  };
 
   /**
    * Create HTML elements for image containers
    */
-  render() {
+  render = () => {
     // Create HTML element: plyr__preview-thumbnail-container
     this.elements.thumb.container = createElement('div', {
       class: this.player.config.classNames.previewThumbnails.thumbContainer,
@@ -326,7 +335,7 @@ class PreviewThumbnails {
     this.elements.thumb.time = createElement('span', {}, '00:00');
     timeContainer.appendChild(this.elements.thumb.time);
 
-    this.elements.thumb.container.appendChild(timeContainer);
+    this.elements.thumb.imageContainer.appendChild(timeContainer);
 
     // Inject the whole thumb
     if (is.element(this.player.elements.progress)) {
@@ -339,21 +348,22 @@ class PreviewThumbnails {
     });
 
     this.player.elements.wrapper.appendChild(this.elements.scrubbing.container);
-  }
+  };
 
-  destroy() {
+  destroy = () => {
     if (this.elements.thumb.container) {
       this.elements.thumb.container.remove();
     }
     if (this.elements.scrubbing.container) {
       this.elements.scrubbing.container.remove();
     }
-  }
+  };
 
-  showImageAtCurrentTime() {
+  showImageAtCurrentTime = () => {
     if (this.mouseDown) {
       this.setScrubbingContainerSize();
-    } else {
+    }
+    else {
       this.setThumbContainerSizeAndPos();
     }
 
@@ -382,15 +392,15 @@ class PreviewThumbnails {
       }
     });
 
-    // Only proceed if either thumbnum or thumbfilename has changed
+    // Only proceed if either thumb num or thumbfilename has changed
     if (thumbNum !== this.showingThumb) {
       this.showingThumb = thumbNum;
       this.loadImage(qualityIndex);
     }
-  }
+  };
 
   // Show the image that's currently specified in this.showingThumb
-  loadImage(qualityIndex = 0) {
+  loadImage = (qualityIndex = 0) => {
     const thumbNum = this.showingThumb;
     const thumbnail = this.thumbnails[qualityIndex];
     const { urlPrefix } = thumbnail;
@@ -420,15 +430,16 @@ class PreviewThumbnails {
       previewImage.onload = () => this.showImage(previewImage, frame, qualityIndex, thumbNum, thumbFilename, true);
       this.loadingImage = previewImage;
       this.removeOldImages(previewImage);
-    } else {
+    }
+    else {
       // Update the existing image
       this.showImage(this.currentImageElement, frame, qualityIndex, thumbNum, thumbFilename, false);
       this.currentImageElement.dataset.index = thumbNum;
       this.removeOldImages(this.currentImageElement);
     }
-  }
+  };
 
-  showImage(previewImage, frame, qualityIndex, thumbNum, thumbFilename, newImage = true) {
+  showImage = (previewImage, frame, qualityIndex, thumbNum, thumbFilename, newImage = true) => {
     this.player.debug.log(
       `Showing thumb: ${thumbFilename}. num: ${thumbNum}. qual: ${qualityIndex}. newimg: ${newImage}`,
     );
@@ -449,12 +460,12 @@ class PreviewThumbnails {
     this.preloadNearby(thumbNum, true)
       .then(this.preloadNearby(thumbNum, false))
       .then(this.getHigherQuality(qualityIndex, previewImage, frame, thumbFilename));
-  }
+  };
 
   // Remove all preview images that aren't the designated current image
-  removeOldImages(currentImage) {
+  removeOldImages = (currentImage) => {
     // Get a list of all images, convert it from a DOM list to an array
-    Array.from(this.currentImageContainer.children).forEach(image => {
+    Array.from(this.currentImageContainer.children).forEach((image) => {
       if (image.tagName.toLowerCase() !== 'img') {
         return;
       }
@@ -464,7 +475,7 @@ class PreviewThumbnails {
       if (image.dataset.index !== currentImage.dataset.index && !image.dataset.deleting) {
         // Wait 200ms, as the new image can take some time to show on certain browsers (even though it was downloaded before showing). This will prevent flicker, and show some generosity towards slower clients
         // First set attribute 'deleting' to prevent multi-handling of this on repeat firing of this function
-        // eslint-disable-next-line no-param-reassign
+
         image.dataset.deleting = true;
 
         // This has to be set before the timeout - to prevent issues switching between hover and scrub
@@ -476,12 +487,12 @@ class PreviewThumbnails {
         }, removeDelay);
       }
     });
-  }
+  };
 
   // Preload images before and after the current one. Only if the user is still hovering/seeking the same frame
   // This will only preload the lowest quality
-  preloadNearby(thumbNum, forward = true) {
-    return new Promise(resolve => {
+  preloadNearby = (thumbNum, forward = true) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         const oldThumbFilename = this.thumbnails[0].frames[thumbNum].text;
 
@@ -490,13 +501,14 @@ class PreviewThumbnails {
           let thumbnailsClone;
           if (forward) {
             thumbnailsClone = this.thumbnails[0].frames.slice(thumbNum);
-          } else {
+          }
+          else {
             thumbnailsClone = this.thumbnails[0].frames.slice(0, thumbNum).reverse();
           }
 
           let foundOne = false;
 
-          thumbnailsClone.forEach(frame => {
+          thumbnailsClone.forEach((frame) => {
             const newThumbFilename = frame.text;
 
             if (newThumbFilename !== oldThumbFilename) {
@@ -527,10 +539,10 @@ class PreviewThumbnails {
         }
       }, 300);
     });
-  }
+  };
 
   // If user has been hovering current image for half a second, look for a higher quality one
-  getHigherQuality(currentQualityIndex, previewImage, frame, thumbFilename) {
+  getHigherQuality = (currentQualityIndex, previewImage, frame, thumbFilename) => {
     if (currentQualityIndex < this.thumbnails.length - 1) {
       // Only use the higher quality version if it's going to look any better - if the current thumb is of a lower pixel density than the thumbnail container
       let previewImageHeight = previewImage.naturalHeight;
@@ -550,14 +562,10 @@ class PreviewThumbnails {
         }, 300);
       }
     }
-  }
+  };
 
   get currentImageContainer() {
-    if (this.mouseDown) {
-      return this.elements.scrubbing.container;
-    }
-
-    return this.elements.thumb.imageContainer;
+    return this.mouseDown ? this.elements.scrubbing.container : this.elements.thumb.imageContainer;
   }
 
   get usingSprites() {
@@ -590,22 +598,19 @@ class PreviewThumbnails {
   }
 
   get currentImageElement() {
-    if (this.mouseDown) {
-      return this.currentScrubbingImageElement;
-    }
-
-    return this.currentThumbnailImageElement;
+    return this.mouseDown ? this.currentScrubbingImageElement : this.currentThumbnailImageElement;
   }
 
   set currentImageElement(element) {
     if (this.mouseDown) {
       this.currentScrubbingImageElement = element;
-    } else {
+    }
+    else {
       this.currentThumbnailImageElement = element;
     }
   }
 
-  toggleThumbContainer(toggle = false, clearShowing = false) {
+  toggleThumbContainer = (toggle = false, clearShowing = false) => {
     const className = this.player.config.classNames.previewThumbnails.thumbContainerShown;
     this.elements.thumb.container.classList.toggle(className, toggle);
 
@@ -613,9 +618,9 @@ class PreviewThumbnails {
       this.showingThumb = null;
       this.showingThumbFilename = null;
     }
-  }
+  };
 
-  toggleScrubbingContainer(toggle = false) {
+  toggleScrubbingContainer = (toggle = false) => {
     const className = this.player.config.classNames.previewThumbnails.scrubbingContainerShown;
     this.elements.scrubbing.container.classList.toggle(className, toggle);
 
@@ -623,87 +628,79 @@ class PreviewThumbnails {
       this.showingThumb = null;
       this.showingThumbFilename = null;
     }
-  }
+  };
 
-  determineContainerAutoSizing() {
+  determineContainerAutoSizing = () => {
     if (this.elements.thumb.imageContainer.clientHeight > 20 || this.elements.thumb.imageContainer.clientWidth > 20) {
       // This will prevent auto sizing in this.setThumbContainerSizeAndPos()
       this.sizeSpecifiedInCSS = true;
     }
-  }
+  };
 
   // Set the size to be about a quarter of the size of video. Unless option dynamicSize === false, in which case it needs to be set in CSS
-  setThumbContainerSizeAndPos() {
+  setThumbContainerSizeAndPos = () => {
+    const { imageContainer } = this.elements.thumb;
+
     if (!this.sizeSpecifiedInCSS) {
       const thumbWidth = Math.floor(this.thumbContainerHeight * this.thumbAspectRatio);
-      this.elements.thumb.imageContainer.style.height = `${this.thumbContainerHeight}px`;
-      this.elements.thumb.imageContainer.style.width = `${thumbWidth}px`;
-    } else if (
-      this.elements.thumb.imageContainer.clientHeight > 20 &&
-      this.elements.thumb.imageContainer.clientWidth < 20
-    ) {
-      const thumbWidth = Math.floor(this.elements.thumb.imageContainer.clientHeight * this.thumbAspectRatio);
-      this.elements.thumb.imageContainer.style.width = `${thumbWidth}px`;
-    } else if (
-      this.elements.thumb.imageContainer.clientHeight < 20 &&
-      this.elements.thumb.imageContainer.clientWidth > 20
-    ) {
-      const thumbHeight = Math.floor(this.elements.thumb.imageContainer.clientWidth / this.thumbAspectRatio);
-      this.elements.thumb.imageContainer.style.height = `${thumbHeight}px`;
+      imageContainer.style.height = `${this.thumbContainerHeight}px`;
+      imageContainer.style.width = `${thumbWidth}px`;
+    }
+    else if (imageContainer.clientHeight > 20 && imageContainer.clientWidth < 20) {
+      const thumbWidth = Math.floor(imageContainer.clientHeight * this.thumbAspectRatio);
+      imageContainer.style.width = `${thumbWidth}px`;
+    }
+    else if (imageContainer.clientHeight < 20 && imageContainer.clientWidth > 20) {
+      const thumbHeight = Math.floor(imageContainer.clientWidth / this.thumbAspectRatio);
+      imageContainer.style.height = `${thumbHeight}px`;
     }
 
     this.setThumbContainerPos();
-  }
+  };
 
-  setThumbContainerPos() {
-    const seekbarRect = this.player.elements.progress.getBoundingClientRect();
-    const plyrRect = this.player.elements.container.getBoundingClientRect();
+  setThumbContainerPos = () => {
+    const scrubberRect = this.player.elements.progress.getBoundingClientRect();
+    const containerRect = this.player.elements.container.getBoundingClientRect();
     const { container } = this.elements.thumb;
     // Find the lowest and highest desired left-position, so we don't slide out the side of the video container
-    const minVal = plyrRect.left - seekbarRect.left + 10;
-    const maxVal = plyrRect.right - seekbarRect.left - container.clientWidth - 10;
+    const min = containerRect.left - scrubberRect.left + 10;
+    const max = containerRect.right - scrubberRect.left - container.clientWidth - 10;
     // Set preview container position to: mousepos, minus seekbar.left, minus half of previewContainer.clientWidth
-    let previewPos = this.mousePosX - seekbarRect.left - container.clientWidth / 2;
+    const position = this.mousePosX - scrubberRect.left - container.clientWidth / 2;
+    const clamped = clamp(position, min, max);
 
-    if (previewPos < minVal) {
-      previewPos = minVal;
-    }
+    // Move the popover position
+    container.style.left = `${clamped}px`;
 
-    if (previewPos > maxVal) {
-      previewPos = maxVal;
-    }
-
-    container.style.left = `${previewPos}px`;
-  }
+    // The arrow can follow the cursor
+    container.style.setProperty('--preview-arrow-offset', `${position - clamped}px`);
+  };
 
   // Can't use 100% width, in case the video is a different aspect ratio to the video container
-  setScrubbingContainerSize() {
+  setScrubbingContainerSize = () => {
     const { width, height } = fitRatio(this.thumbAspectRatio, {
       width: this.player.media.clientWidth,
       height: this.player.media.clientHeight,
     });
     this.elements.scrubbing.container.style.width = `${width}px`;
     this.elements.scrubbing.container.style.height = `${height}px`;
-  }
+  };
 
   // Sprites need to be offset to the correct location
-  setImageSizeAndOffset(previewImage, frame) {
-    if (!this.usingSprites) {
-      return;
-    }
+  setImageSizeAndOffset = (previewImage, frame) => {
+    if (!this.usingSprites) return;
 
     // Find difference between height and preview container height
     const multiplier = this.thumbContainerHeight / frame.h;
 
-    // eslint-disable-next-line no-param-reassign
     previewImage.style.height = `${previewImage.naturalHeight * multiplier}px`;
-    // eslint-disable-next-line no-param-reassign
+
     previewImage.style.width = `${previewImage.naturalWidth * multiplier}px`;
-    // eslint-disable-next-line no-param-reassign
+
     previewImage.style.left = `-${frame.x * multiplier}px`;
-    // eslint-disable-next-line no-param-reassign
+
     previewImage.style.top = `-${frame.y * multiplier}px`;
-  }
+  };
 }
 
 export default PreviewThumbnails;

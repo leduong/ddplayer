@@ -18,7 +18,7 @@ const html5 = {
     const sources = Array.from(this.media.querySelectorAll('source'));
 
     // Filter out unsupported sources (if type is specified)
-    return sources.filter(source => {
+    return sources.filter((source) => {
       const type = source.getAttribute('type');
 
       if (is.empty(type)) {
@@ -73,10 +73,11 @@ const html5 = {
           return;
         }
 
-        // If we're using an an external handler...
+        // If we're using an external handler...
         if (player.config.quality.forced && is.function(player.config.quality.onChange)) {
           player.config.quality.onChange(input);
-        } else {
+        }
+        else {
           // Get sources
           const sources = html5.getSources.call(player);
           // Get first match for requested size

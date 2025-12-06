@@ -38,7 +38,8 @@ const controls = {
   // Get icon URL
   getIconUrl() {
     const url = new URL(this.config.iconUrl, window.location);
-    const cors = url.host !== window.location.host || (browser.isIE && !window.svg4everybody);
+    const host = window.location.host ? window.location.host : window.top.location.host;
+    const cors = url.host !== host || (browser.isIE && !window.svg4everybody);
 
     return {
       url: this.config.iconUrl,
@@ -88,7 +89,8 @@ const controls = {
       }
 
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       // Log it
       this.debug.warn('It looks like there is a problem with your custom controls HTML', error);
 
@@ -110,7 +112,7 @@ const controls = {
       icon,
       extend(attributes, {
         'aria-hidden': 'true',
-        focusable: 'false',
+        'focusable': 'false',
       }),
     );
 
@@ -179,7 +181,7 @@ const controls = {
       iconPressed: null,
     };
 
-    ['element', 'icon', 'label'].forEach(key => {
+    ['element', 'icon', 'label'].forEach((key) => {
       if (Object.keys(attributes).includes(key)) {
         props[key] = attributes[key];
         delete attributes[key];
@@ -193,12 +195,13 @@ const controls = {
 
     // Set class name
     if (Object.keys(attributes).includes('class')) {
-      if (!attributes.class.split(' ').some(c => c === this.config.classNames.control)) {
+      if (!attributes.class.split(' ').includes(this.config.classNames.control)) {
         extend(attributes, {
           class: `${attributes.class} ${this.config.classNames.control}`,
         });
       }
-    } else {
+    }
+    else {
       attributes.class = this.config.classNames.control;
     }
 
@@ -279,7 +282,8 @@ const controls = {
           class: 'label--not-pressed',
         }),
       );
-    } else {
+    }
+    else {
       button.appendChild(controls.createIcon.call(this, props.icon));
       button.appendChild(controls.createLabel.call(this, props.label));
     }
@@ -295,7 +299,8 @@ const controls = {
       }
 
       this.elements.buttons[type].push(button);
-    } else {
+    }
+    else {
       this.elements.buttons[type] = button;
     }
 
@@ -310,14 +315,14 @@ const controls = {
       extend(
         getAttributesFromSelector(this.config.selectors.inputs[type]),
         {
-          type: 'range',
-          min: 0,
-          max: 100,
-          step: 0.01,
-          value: 0,
-          autocomplete: 'off',
+          'type': 'range',
+          'min': 0,
+          'max': 100,
+          'step': 0.01,
+          'value': 0,
+          'autocomplete': 'off',
           // A11y fixes for https://github.com/sampotts/plyr/issues/905
-          role: 'slider',
+          'role': 'slider',
           'aria-label': i18n.get(type, this.config),
           'aria-valuemin': 0,
           'aria-valuemax': 100,
@@ -345,10 +350,10 @@ const controls = {
       extend(
         getAttributesFromSelector(this.config.selectors.display[type]),
         {
-          min: 0,
-          max: 100,
-          value: 0,
-          role: 'progressbar',
+          'min': 0,
+          'max': 100,
+          'value': 0,
+          'role': 'progressbar',
           'aria-hidden': true,
         },
         attributes,
@@ -365,7 +370,7 @@ const controls = {
       }[type];
       const suffix = suffixKey ? i18n.get(suffixKey, this.config) : '';
 
-      progress.innerText = `% ${suffix.toLowerCase()}`;
+      progress.textContent = `% ${suffix.toLowerCase()}`;
     }
 
     this.elements.display[type] = progress;
@@ -380,8 +385,9 @@ const controls = {
     const container = createElement(
       'div',
       extend(attributes, {
-        class: `${attributes.class ? attributes.class : ''} ${this.config.classNames.display.time} `.trim(),
+        'class': `${attributes.class ? attributes.class : ''} ${this.config.classNames.display.time} `.trim(),
         'aria-label': i18n.get(type, this.config),
+        'role': 'timer',
       }),
       '00:00',
     );
@@ -401,9 +407,9 @@ const controls = {
       this,
       menuItem,
       'keydown keyup',
-      event => {
+      (event) => {
         // We only care about space and ⬆️ ⬇️️ ➡️
-        if (![32, 38, 39, 40].includes(event.which)) {
+        if (![' ', 'ArrowUp', 'ArrowDown', 'ArrowRight'].includes(event.key)) {
           return;
         }
 
@@ -419,19 +425,21 @@ const controls = {
         const isRadioButton = matches(menuItem, '[role="menuitemradio"]');
 
         // Show the respective menu
-        if (!isRadioButton && [32, 39].includes(event.which)) {
+        if (!isRadioButton && [' ', 'ArrowRight'].includes(event.key)) {
           controls.showMenuPanel.call(this, type, true);
-        } else {
+        }
+        else {
           let target;
 
-          if (event.which !== 32) {
-            if (event.which === 40 || (isRadioButton && event.which === 39)) {
+          if (event.key !== ' ') {
+            if (event.key === 'ArrowDown' || (isRadioButton && event.key === 'ArrowRight')) {
               target = menuItem.nextElementSibling;
 
               if (!is.element(target)) {
                 target = menuItem.parentNode.firstElementChild;
               }
-            } else {
+            }
+            else {
               target = menuItem.previousElementSibling;
 
               if (!is.element(target)) {
@@ -448,10 +456,8 @@ const controls = {
 
     // Enter will fire a `click` event but we still need to manage focus
     // So we bind to keyup which fires after and set focus here
-    on.call(this, menuItem, 'keyup', event => {
-      if (event.which !== 13) {
-        return;
-      }
+    on.call(this, menuItem, 'keyup', (event) => {
+      if (event.key !== 'Return') return;
 
       controls.focusFirstMenuItem.call(this, null, true);
     });
@@ -464,9 +470,9 @@ const controls = {
     const menuItem = createElement(
       'button',
       extend(attributes, {
-        type: 'button',
-        role: 'menuitemradio',
-        class: `${this.config.classNames.control} ${attributes.class ? attributes.class : ''}`.trim(),
+        'type': 'button',
+        'role': 'menuitemradio',
+        'class': `${this.config.classNames.control} ${attributes.class ? attributes.class : ''}`.trim(),
         'aria-checked': checked,
         value,
       }),
@@ -483,7 +489,7 @@ const controls = {
 
     menuItem.appendChild(flex);
 
-    // Replicate radio button behaviour
+    // Replicate radio button behavior
     Object.defineProperty(menuItem, 'checked', {
       enumerable: true,
       get() {
@@ -504,8 +510,8 @@ const controls = {
     this.listeners.bind(
       menuItem,
       'click keyup',
-      event => {
-        if (is.keyboardEvent(event) && event.which !== 32) {
+      (event) => {
+        if (is.keyboardEvent(event) && event.key !== ' ') {
           return;
         }
 
@@ -524,7 +530,7 @@ const controls = {
             break;
 
           case 'speed':
-            this.speed = parseFloat(value);
+            this.speed = Number.parseFloat(value);
             break;
 
           default:
@@ -562,8 +568,7 @@ const controls = {
       return;
     }
 
-    // eslint-disable-next-line no-param-reassign
-    target.innerText = controls.formatTime(time, inverted);
+    target.textContent = controls.formatTime(time, inverted);
   },
 
   // Update volume UI and storage
@@ -589,7 +594,6 @@ const controls = {
       return;
     }
 
-    // eslint-disable-next-line
     target.value = value;
 
     // Webkit range fill
@@ -668,16 +672,18 @@ const controls = {
         'aria-valuetext',
         format.replace('{currentTime}', currentTime).replace('{duration}', duration),
       );
-    } else if (matches(range, this.config.selectors.inputs.volume)) {
+    }
+    else if (matches(range, this.config.selectors.inputs.volume)) {
       const percent = range.value * 100;
       range.setAttribute('aria-valuenow', percent);
       range.setAttribute('aria-valuetext', `${percent.toFixed(1)}%`);
-    } else {
+    }
+    else {
       range.setAttribute('aria-valuenow', range.value);
     }
 
     // WebKit only
-    if (!browser.isWebkit) {
+    if (!browser.isWebKit && !browser.isIPadOS) {
       return;
     }
 
@@ -689,16 +695,17 @@ const controls = {
   updateSeekTooltip(event) {
     // Bail if setting not true
     if (
-      !this.config.tooltips.seek ||
-      !is.element(this.elements.inputs.seek) ||
-      !is.element(this.elements.display.seekTooltip) ||
-      this.duration === 0
+      !this.config.tooltips.seek
+      || !is.element(this.elements.inputs.seek)
+      || !is.element(this.elements.display.seekTooltip)
+      || this.duration === 0
     ) {
       return;
     }
 
+    const tipElement = this.elements.display.seekTooltip;
     const visible = `${this.config.classNames.tooltip}--visible`;
-    const toggle = show => toggleClass(this.elements.display.seekTooltip, visible, show);
+    const toggle = show => toggleClass(tipElement, visible, show);
 
     // Hide on touch
     if (this.touch) {
@@ -711,25 +718,39 @@ const controls = {
     const clientRect = this.elements.progress.getBoundingClientRect();
 
     if (is.event(event)) {
-      percent = (100 / clientRect.width) * (event.pageX - clientRect.left);
-    } else if (hasClass(this.elements.display.seekTooltip, visible)) {
-      percent = parseFloat(this.elements.display.seekTooltip.style.left, 10);
-    } else {
+      const scrollLeft = event.pageX - event.clientX;
+      percent = (100 / clientRect.width) * (event.pageX - clientRect.left - scrollLeft);
+    }
+    else if (hasClass(tipElement, visible)) {
+      percent = Number.parseFloat(tipElement.style.left, 10);
+    }
+    else {
       return;
     }
 
     // Set bounds
     if (percent < 0) {
       percent = 0;
-    } else if (percent > 100) {
+    }
+    else if (percent > 100) {
       percent = 100;
     }
 
+    const time = (this.duration / 100) * percent;
+
     // Display the time a click would seek to
-    controls.updateTimeDisplay.call(this, this.elements.display.seekTooltip, (this.duration / 100) * percent);
+    tipElement.textContent = controls.formatTime(time);
+
+    // Get marker point for time
+    const point = this.config.markers?.points?.find(({ time: t }) => t === Math.round(time));
+
+    // Append the point label to the tooltip
+    if (point) {
+      tipElement.insertAdjacentHTML('afterbegin', `${point.label}<br>`);
+    }
 
     // Set position
-    this.elements.display.seekTooltip.style.left = `${percent}%`;
+    tipElement.style.left = `${percent}%`;
 
     // Show/hide the tooltip
     // If the event is a moues in/out and percentage is inside bounds
@@ -795,6 +816,10 @@ const controls = {
       controls.updateTimeDisplay.call(this, this.elements.display.duration, this.duration);
     }
 
+    if (this.config.markers.enabled) {
+      controls.setMarkers.call(this);
+    }
+
     // Update the tooltip (if visible)
     controls.updateSeekTooltip.call(this);
   },
@@ -812,7 +837,8 @@ const controls = {
 
     if (setting === 'captions') {
       value = this.currentTrack;
-    } else {
+    }
+    else {
       value = !is.empty(input) ? input : this[setting];
 
       // Get default
@@ -917,7 +943,7 @@ const controls = {
     }
 
     // Get the badge HTML for HD, 4K etc
-    const getBadge = quality => {
+    const getBadge = (quality) => {
       const label = i18n.get(`qualityBadge.${quality}`, this.config);
 
       if (!label.length) {
@@ -933,7 +959,7 @@ const controls = {
         const sorting = this.config.quality.options;
         return sorting.indexOf(a) > sorting.indexOf(b) ? 1 : -1;
       })
-      .forEach(quality => {
+      .forEach((quality) => {
         controls.createMenuItem.call(this, {
           value: quality,
           list,
@@ -1074,7 +1100,7 @@ const controls = {
     }
 
     // Create items
-    this.options.speed.forEach(speed => {
+    this.options.speed.forEach((speed) => {
       controls.createMenuItem.call(this, {
         value: speed,
         list,
@@ -1095,7 +1121,7 @@ const controls = {
   },
 
   // Focus the first menu item in a given (or visible) menu
-  focusFirstMenuItem(pane, tabFocus = false) {
+  focusFirstMenuItem(pane, focusVisible = false) {
     if (this.elements.settings.popup.hidden) {
       return;
     }
@@ -1108,7 +1134,7 @@ const controls = {
 
     const firstItem = target.querySelector('[role^="menuitem"]');
 
-    setFocus.call(this, firstItem, tabFocus);
+    setFocus.call(this, firstItem, focusVisible);
   },
 
   // Show/hide menu
@@ -1127,9 +1153,11 @@ const controls = {
 
     if (is.boolean(input)) {
       show = input;
-    } else if (is.keyboardEvent(input) && input.which === 27) {
+    }
+    else if (is.keyboardEvent(input) && input.key === 'Escape') {
       show = false;
-    } else if (is.event(input)) {
+    }
+    else if (is.event(input)) {
       // If Plyr is in a shadowDOM, the event target is set to the component, instead of the
       // Element in the shadowDOM. The path, if available, is complete.
       const target = is.function(input.composedPath) ? input.composedPath()[0] : input.target;
@@ -1155,7 +1183,8 @@ const controls = {
     // Focus the first item if key interaction
     if (show && is.keyboardEvent(input)) {
       controls.focusFirstMenuItem.call(this, null, true);
-    } else if (!show && !hidden) {
+    }
+    else if (!show && !hidden) {
       // If closing, re-focus the button
       setFocus.call(this, button, is.keyboardEvent(input));
     }
@@ -1185,7 +1214,7 @@ const controls = {
   },
 
   // Show a panel in the menu
-  showMenuPanel(type = '', tabFocus = false) {
+  showMenuPanel(type = '', focusVisible = false) {
     const target = this.elements.container.querySelector(`#plyr-settings-${this.id}-${type}`);
 
     // Nothing to show, bail
@@ -1207,7 +1236,7 @@ const controls = {
       const size = controls.getMenuSize.call(this, target);
 
       // Restore auto height/width
-      const restore = event => {
+      const restore = (event) => {
         // We're only bothered about height and width on the container
         if (event.target !== container || !['width', 'height'].includes(event.propertyName)) {
           return;
@@ -1236,7 +1265,7 @@ const controls = {
     toggleHidden(target, false);
 
     // Focus the first item
-    controls.focusFirstMenuItem.call(this, target, tabFocus);
+    controls.focusFirstMenuItem.call(this, target, focusVisible);
   },
 
   // Set the download URL
@@ -1279,7 +1308,7 @@ const controls = {
     const defaultAttributes = { class: 'plyr__controls__item' };
 
     // Loop through controls in order
-    dedupe(is.array(this.config.controls) ? this.config.controls : []).forEach(control => {
+    dedupe(is.array(this.config.controls) ? this.config.controls : []).forEach((control) => {
       // Restart button
       if (control === 'restart') {
         container.appendChild(createButton.call(this, 'restart', defaultAttributes));
@@ -1375,7 +1404,7 @@ const controls = {
         // Volume range control
         // Ignored on iOS as it's handled globally
         // https://developer.apple.com/library/safari/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/Device-SpecificConsiderations/Device-SpecificConsiderations.html
-        if (control === 'volume' && !browser.isIos) {
+        if (control === 'volume' && !browser.isIos && !browser.isIPadOS) {
           // Set the attributes
           const attributes = {
             max: 1,
@@ -1441,16 +1470,16 @@ const controls = {
         this.elements.settings.panels.home = home;
 
         // Build the menu items
-        this.config.settings.forEach(type => {
+        this.config.settings.forEach((type) => {
           // TODO: bundle this with the createMenuItem helper and bindings
           const menuItem = createElement(
             'button',
             extend(getAttributesFromSelector(this.config.selectors.buttons.settings), {
-              type: 'button',
-              class: `${this.config.classNames.control} ${this.config.classNames.control}--forward`,
-              role: 'menuitem',
+              'type': 'button',
+              'class': `${this.config.classNames.control} ${this.config.classNames.control}--forward`,
+              'role': 'menuitem',
               'aria-haspopup': true,
-              hidden: '',
+              'hidden': '',
             }),
           );
 
@@ -1514,11 +1543,8 @@ const controls = {
             this,
             pane,
             'keydown',
-            event => {
-              // We only care about <-
-              if (event.which !== 37) {
-                return;
-              }
+            (event) => {
+              if (event.key !== 'ArrowLeft') return;
 
               // Prevent seek
               event.preventDefault();
@@ -1650,7 +1676,8 @@ const controls = {
     if (is.element(this.config.controls) || is.string(this.config.controls)) {
       // HTMLElement or Non-empty string passed as the option
       container = this.config.controls;
-    } else {
+    }
+    else {
       // Create controls
       container = controls.create.call(this, {
         id: this.id,
@@ -1665,7 +1692,7 @@ const controls = {
     }
 
     // Replace props with their value
-    const replace = input => {
+    const replace = (input) => {
       let result = input;
 
       Object.entries(props).forEach(([key, value]) => {
@@ -1706,15 +1733,19 @@ const controls = {
 
     // Add pressed property to buttons
     if (!is.empty(this.elements.buttons)) {
-      const addProperty = button => {
+      const addProperty = (button) => {
         const className = this.config.classNames.controlPressed;
+        button.setAttribute('aria-pressed', 'false');
+
         Object.defineProperty(button, 'pressed', {
+          configurable: true,
           enumerable: true,
           get() {
             return hasClass(button, className);
           },
           set(pressed = false) {
             toggleClass(button, className, pressed);
+            button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
           },
         });
       };
@@ -1722,12 +1753,11 @@ const controls = {
       // Toggle classname when pressed property is set
       Object.values(this.elements.buttons)
         .filter(Boolean)
-        .forEach(button => {
+        .forEach((button) => {
           if (is.array(button) || is.nodeList(button)) {
-            Array.from(button)
-              .filter(Boolean)
-              .forEach(addProperty);
-          } else {
+            Array.from(button).filter(Boolean).forEach(addProperty);
+          }
+          else {
             addProperty(button);
           }
         });
@@ -1744,11 +1774,100 @@ const controls = {
       const selector = `${selectors.controls.wrapper} ${selectors.labels} .${classNames.hidden}`;
       const labels = getElements.call(this, selector);
 
-      Array.from(labels).forEach(label => {
+      Array.from(labels).forEach((label) => {
         toggleClass(label, this.config.classNames.hidden, false);
         toggleClass(label, this.config.classNames.tooltip, true);
       });
     }
+  },
+
+  // Set media metadata
+  setMediaMetadata() {
+    try {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new window.MediaMetadata({
+          title: this.config.mediaMetadata.title,
+          artist: this.config.mediaMetadata.artist,
+          album: this.config.mediaMetadata.album,
+          artwork: this.config.mediaMetadata.artwork,
+        });
+      }
+    }
+    catch {
+      // Do nothing
+    }
+  },
+
+  // Add markers
+  setMarkers() {
+    if (!this.duration || this.elements.markers) return;
+
+    // Get valid points
+    const points = this.config.markers?.points?.filter(({ time }) => time > 0 && time < this.duration);
+    if (!points?.length) return;
+
+    const containerFragment = document.createDocumentFragment();
+    const pointsFragment = document.createDocumentFragment();
+    let tipElement = null;
+    const tipVisible = `${this.config.classNames.tooltip}--visible`;
+    const toggleTip = show => toggleClass(tipElement, tipVisible, show);
+
+    // Inject markers to progress container
+    points.forEach((point) => {
+      const markerElement = createElement(
+        'span',
+        {
+          class: this.config.classNames.marker,
+        },
+        '',
+      );
+
+      const left = `${(point.time / this.duration) * 100}%`;
+
+      if (tipElement) {
+        // Show on hover
+        markerElement.addEventListener('mouseenter', () => {
+          if (point.label) return;
+          tipElement.style.left = left;
+          tipElement.innerHTML = point.label;
+          toggleTip(true);
+        });
+
+        // Hide on leave
+        markerElement.addEventListener('mouseleave', () => {
+          toggleTip(false);
+        });
+      }
+
+      markerElement.addEventListener('click', () => {
+        this.currentTime = point.time;
+      });
+
+      markerElement.style.left = left;
+      pointsFragment.appendChild(markerElement);
+    });
+
+    containerFragment.appendChild(pointsFragment);
+
+    // Inject a tooltip if needed
+    if (!this.config.tooltips.seek) {
+      tipElement = createElement(
+        'span',
+        {
+          class: this.config.classNames.tooltip,
+        },
+        '',
+      );
+
+      containerFragment.appendChild(tipElement);
+    }
+
+    this.elements.markers = {
+      points: pointsFragment,
+      tip: tipElement,
+    };
+
+    this.elements.progress.appendChild(containerFragment);
   },
 };
 

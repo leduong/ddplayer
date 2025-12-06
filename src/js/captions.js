@@ -33,9 +33,9 @@ const captions = {
     if (!this.isVideo || this.isYouTube || (this.isHTML5 && !support.textTracks)) {
       // Clear menu and hide
       if (
-        is.array(this.config.controls) &&
-        this.config.controls.includes('settings') &&
-        this.config.settings.includes('captions')
+        is.array(this.config.controls)
+        && this.config.controls.includes('settings')
+        && this.config.settings.includes('captions')
       ) {
         this.setCaptionsMenu.call(this);
       }
@@ -46,6 +46,7 @@ const captions = {
     // Inject the container
     if (!is.element(this.elements.captions)) {
       this.elements.captions = createElement('div', getAttributesFromSelector(this.config.selectors.captions));
+      this.elements.captions.setAttribute('dir', 'auto');
 
       insertAfter(this.elements.captions, this.elements.wrapper);
     }
@@ -55,17 +56,17 @@ const captions = {
     if (browser.isIE && window.URL) {
       const elements = this.media.querySelectorAll('track');
 
-      Array.from(elements).forEach(track => {
+      Array.from(elements).forEach((track) => {
         const src = track.getAttribute('src');
         const url = parseUrl(src);
 
         if (
-          url !== null &&
-          url.hostname !== window.location.href.hostname &&
-          ['http:', 'https:'].includes(url.protocol)
+          url !== null
+          && url.hostname !== window.location.href.hostname
+          && ['http:', 'https:'].includes(url.protocol)
         ) {
           fetch(src, 'blob')
-            .then(blob => {
+            .then((blob) => {
               track.setAttribute('src', window.URL.createObjectURL(blob));
             })
             .catch(() => {
@@ -84,14 +85,14 @@ const captions = {
 
     const browserLanguages = navigator.languages || [navigator.language || navigator.userLanguage || 'en'];
     const languages = dedupe(browserLanguages.map(language => language.split('-')[0]));
-    let language = (this.storage.get('language') || this.config.captions.language || 'auto').toLowerCase();
+    let language = (this.storage.get('language') || this.captions.language || this.config.captions.language || 'auto').toLowerCase();
 
     // Use first browser language when language is 'auto'
     if (language === 'auto') {
       [language] = languages;
     }
 
-    let active = this.storage.get('captions');
+    let active = this.storage.get('captions') || this.captions.active;
     if (!is.boolean(active)) {
       ({ active } = this.config.captions);
     }
@@ -124,7 +125,7 @@ const captions = {
     if (this.isHTML5 && this.isVideo) {
       tracks
         .filter(track => !meta.get(track))
-        .forEach(track => {
+        .forEach((track) => {
           this.debug.log('Track added', track);
 
           // Attempt to store if the original dom element was "default"
@@ -135,9 +136,8 @@ const captions = {
           // Turn off native caption rendering to avoid double captions
           // Note: mode='hidden' forces a track to download. To ensure every track
           // isn't downloaded at once, only 'showing' tracks should be reassigned
-          // eslint-disable-next-line no-param-reassign
+
           if (track.mode === 'showing') {
-            // eslint-disable-next-line no-param-reassign
             track.mode = 'hidden';
           }
 
@@ -153,13 +153,15 @@ const captions = {
     }
 
     // Enable or disable captions based on track length
-    toggleClass(this.elements.container, this.config.classNames.captions.enabled, !is.empty(tracks));
+    if (this.elements) {
+      toggleClass(this.elements.container, this.config.classNames.captions.enabled, !is.empty(tracks));
+    }
 
     // Update available languages in list
     if (
-      is.array(this.config.controls) &&
-      this.config.controls.includes('settings') &&
-      this.config.settings.includes('captions')
+      is.array(this.config.controls)
+      && this.config.controls.includes('settings')
+      && this.config.settings.includes('captions')
     ) {
       this.setCaptionsMenu.call(this);
     }
@@ -319,7 +321,7 @@ const captions = {
     const sorted = Array.from(tracks).sort((a, b) => sortIsDefault(b) - sortIsDefault(a));
     let track;
 
-    languages.every(language => {
+    languages.every((language) => {
       track = sorted.find(t => t.language === language);
       return !track; // Break iteration if there is a match
     });

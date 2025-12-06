@@ -11,7 +11,7 @@ import fetch from '../utils/fetch';
 import is from '../utils/is';
 import loadScript from '../utils/load-script';
 import { format, stripHTML } from '../utils/strings';
-import { setAspectRatio } from '../utils/style';
+import { roundAspectRatio, setAspectRatio } from '../utils/style';
 import { buildUrlParams } from '../utils/urls';
 
 // Parse Vimeo ID from URL
@@ -24,8 +24,25 @@ function parseId(url) {
     return url;
   }
 
+  // eslint-disable-next-line regexp/optimal-quantifier-concatenation
   const regex = /^.*(vimeo.com\/|video\/)(\d+).*/;
-  return url.match(regex) ? RegExp.$2 : url;
+  const match = url.match(regex);
+  return match ? match[2] : url;
+}
+
+// Try to extract a hash for private videos from the URL
+function parseHash(url) {
+  /* This regex matches a hexadecimal hash if given in any of these forms:
+   *  - [https://player.]vimeo.com/video/{id}/{hash}[?params]
+   *  - [https://player.]vimeo.com/video/{id}?h={hash}[&params]
+   *  - [https://player.]vimeo.com/video/{id}?[params]&h={hash}
+   *  - video/{id}/{hash}
+   * If matched, the hash is available in capture group 4
+   */
+  const regex = /^.*(vimeo.com\/|video\/)(\d+)(\?.*h=|\/)+([\d,a-f]+)/;
+  const found = url.match(regex);
+
+  return found && found.length === 5 ? found[4] : null;
 }
 
 // Set playback state and trigger change (only on actual change)
@@ -49,7 +66,7 @@ const vimeo = {
     // Set speed options from config
     player.options.speed = player.config.speed.options;
 
-    // Set intial ratio
+    // Set initial ratio
     setAspectRatio.call(player);
 
     // Load the SDK if not already
@@ -58,10 +75,11 @@ const vimeo = {
         .then(() => {
           vimeo.ready.call(player);
         })
-        .catch(error => {
+        .catch((error) => {
           player.debug.warn('Vimeo SDK (player.js) failed to load', error);
         });
-    } else {
+    }
+    else {
       vimeo.ready.call(player);
     }
   },
@@ -71,6 +89,19 @@ const vimeo = {
     const player = this;
     const config = player.config.vimeo;
     const { premium, referrerPolicy, ...frameParams } = config;
+    // Get the source URL or ID
+    let source = player.media.getAttribute('src');
+    let hash = '';
+    // Get from <div> if needed
+    if (is.empty(source)) {
+      source = player.media.getAttribute(player.config.attributes.embed.id);
+      // hash can also be set as attribute on the <div>
+      hash = player.media.getAttribute(player.config.attributes.embed.hash);
+    }
+    else {
+      hash = parseHash(source);
+    }
+    const hashParam = hash ? { h: hash } : {};
 
     // If the owner has a pro or premium account then we can hide controls etc
     if (premium) {
@@ -86,17 +117,11 @@ const vimeo = {
       autoplay: player.autoplay,
       muted: player.muted,
       gesture: 'media',
-      playsinline: !this.config.fullscreen.iosNative,
+      playsinline: player.config.playsinline,
+      // hash has to be added to iframe-URL
+      ...hashParam,
       ...frameParams,
     });
-
-    // Get the source URL or ID
-    let source = player.media.getAttribute('src');
-
-    // Get from <div> if needed
-    if (is.empty(source)) {
-      source = player.media.getAttribute(player.config.attributes.embed.id);
-    }
 
     const id = parseId(source);
     // Build an iframe
@@ -104,7 +129,10 @@ const vimeo = {
     const src = format(player.config.urls.vimeo.iframe, id, params);
     iframe.setAttribute('src', src);
     iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('allow', 'autoplay,fullscreen,picture-in-picture');
+    iframe.setAttribute(
+      'allow',
+      ['autoplay', 'fullscreen', 'picture-in-picture', 'encrypted-media', 'accelerometer', 'gyroscope'].join('; '),
+    );
 
     // Set the referrer policy if required
     if (!is.empty(referrerPolicy)) {
@@ -112,25 +140,30 @@ const vimeo = {
     }
 
     // Inject the package
-    const { poster } = player;
-    if (premium) {
-      iframe.setAttribute('data-poster', poster);
+    if (premium || !config.customControls) {
+      iframe.setAttribute('data-poster', player.poster);
       player.media = replaceElement(iframe, player.media);
-    } else {
-      const wrapper = createElement('div', { class: player.config.classNames.embedContainer, 'data-poster': poster });
+    }
+    else {
+      const wrapper = createElement('div', {
+        'class': player.config.classNames.embedContainer,
+        'data-poster': player.poster,
+      });
       wrapper.appendChild(iframe);
       player.media = replaceElement(wrapper, player.media);
     }
-    
+
     // Get poster image
-    fetch(format(player.config.urls.vimeo.api, src)).then(response => {
-      if (is.empty(response) || !response.thumbnail_url) {
-        return;
-      }
-      
-      // Set and show poster
-      ui.setPoster.call(player, response.thumbnail_url).catch(() => { });
-    });
+    if (!config.customControls) {
+      fetch(format(player.config.urls.vimeo.api, src)).then((response) => {
+        if (is.empty(response) || !response.thumbnail_url) {
+          return;
+        }
+
+        // Set and show poster
+        ui.setPoster.call(player, response.thumbnail_url).catch(() => {});
+      });
+    }
 
     // Setup instance
     // https://github.com/vimeo/player.js
@@ -237,7 +270,7 @@ const vimeo = {
       set(input) {
         const toggle = is.boolean(input) ? input : false;
 
-        player.embed.setVolume(toggle ? 0 : player.config.volume).then(() => {
+        player.embed.setMuted(toggle ? true : player.config.muted).then(() => {
           muted = toggle;
           triggerEvent.call(player, player.media, 'volumechange');
         });
@@ -263,11 +296,11 @@ const vimeo = {
     let currentSrc;
     player.embed
       .getVideoUrl()
-      .then(value => {
+      .then((value) => {
         currentSrc = value;
         controls.setDownloadUrl.call(player);
       })
-      .catch(error => {
+      .catch((error) => {
         this.debug.warn(error);
       });
 
@@ -285,37 +318,37 @@ const vimeo = {
     });
 
     // Set aspect ratio based on video size
-    Promise.all([player.embed.getVideoWidth(), player.embed.getVideoHeight()]).then(dimensions => {
+    Promise.all([player.embed.getVideoWidth(), player.embed.getVideoHeight()]).then((dimensions) => {
       const [width, height] = dimensions;
-      player.embed.ratio = [width, height];
+      player.embed.ratio = roundAspectRatio(width, height);
       setAspectRatio.call(this);
     });
 
     // Set autopause
-    player.embed.setAutopause(player.config.autopause).then(state => {
+    player.embed.setAutopause(player.config.autopause).then((state) => {
       player.config.autopause = state;
     });
 
     // Get title
-    player.embed.getVideoTitle().then(title => {
+    player.embed.getVideoTitle().then((title) => {
       player.config.title = title;
       ui.setTitle.call(this);
     });
 
     // Get current time
-    player.embed.getCurrentTime().then(value => {
+    player.embed.getCurrentTime().then((value) => {
       currentTime = value;
       triggerEvent.call(player, player.media, 'timeupdate');
     });
 
     // Get duration
-    player.embed.getDuration().then(value => {
+    player.embed.getDuration().then((value) => {
       player.media.duration = value;
       triggerEvent.call(player, player.media, 'durationchange');
     });
 
     // Get captions
-    player.embed.getTextTracks().then(tracks => {
+    player.embed.getTextTracks().then((tracks) => {
       player.media.textTracks = tracks;
       captions.setup.call(player);
     });
@@ -327,7 +360,7 @@ const vimeo = {
 
     player.embed.on('loaded', () => {
       // Assure state and events are updated on autoplay
-      player.embed.getPaused().then(paused => {
+      player.embed.getPaused().then((paused) => {
         assurePlaybackState.call(player, !paused);
         if (!paused) {
           triggerEvent.call(player, player.media, 'playing');
@@ -360,24 +393,24 @@ const vimeo = {
       assurePlaybackState.call(player, false);
     });
 
-    player.embed.on('timeupdate', data => {
+    player.embed.on('timeupdate', (data) => {
       player.media.seeking = false;
       currentTime = data.seconds;
       triggerEvent.call(player, player.media, 'timeupdate');
     });
 
-    player.embed.on('progress', data => {
+    player.embed.on('progress', (data) => {
       player.media.buffered = data.percent;
       triggerEvent.call(player, player.media, 'progress');
 
       // Check all loaded
-      if (parseInt(data.percent, 10) === 1) {
+      if (Number.parseInt(data.percent, 10) === 1) {
         triggerEvent.call(player, player.media, 'canplaythrough');
       }
 
       // Get duration as if we do it before load, it gives an incorrect value
       // https://github.com/sampotts/plyr/issues/891
-      player.embed.getDuration().then(value => {
+      player.embed.getDuration().then((value) => {
         if (value !== player.media.duration) {
           player.media.duration = value;
           triggerEvent.call(player, player.media, 'durationchange');
@@ -395,13 +428,15 @@ const vimeo = {
       triggerEvent.call(player, player.media, 'ended');
     });
 
-    player.embed.on('error', detail => {
+    player.embed.on('error', (detail) => {
       player.media.error = detail;
       triggerEvent.call(player, player.media, 'error');
     });
 
     // Rebuild UI
-    setTimeout(() => ui.build.call(player), 0);
+    if (config.customControls) {
+      setTimeout(() => ui.build.call(player), 0);
+    }
   },
 };
 

@@ -18,7 +18,6 @@ export default function loadSprite(url, id) {
   const exists = () => document.getElementById(id) !== null;
 
   const update = (container, data) => {
-    // eslint-disable-next-line no-param-reassign
     container.innerHTML = data;
 
     // Check again incase of race condition
@@ -54,18 +53,21 @@ export default function loadSprite(url, id) {
 
     // Get the sprite
     fetch(url)
-      .then(result => {
+      .then((result) => {
         if (is.empty(result)) {
           return;
         }
 
         if (useStorage) {
-          window.localStorage.setItem(
-            `${prefix}-${id}`,
-            JSON.stringify({
-              content: result,
-            }),
-          );
+          try {
+            window.localStorage.setItem(
+              `${prefix}-${id}`,
+              JSON.stringify({
+                content: result,
+              }),
+            );
+          }
+          catch {}
         }
 
         update(container, result);

@@ -26,7 +26,8 @@ export function formatTime(time = 0, displayHours = false, inverted = false) {
   // Do we need to display hours?
   if (displayHours || hours > 0) {
     hours = `${hours}:`;
-  } else {
+  }
+  else {
     hours = '';
   }
 
